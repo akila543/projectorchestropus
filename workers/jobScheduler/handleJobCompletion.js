@@ -7,7 +7,6 @@ module.exports = function(jobId, stages, a, done) {
     return ['Completed', 'Failed', 'Blocked'].indexOf(stage.status) >= 0;
   });
 
-  console.log('JOB COMPLETED:', isJobComplete);
-
+ console.log('JOB COMPLETED:', isJobComplete);
   done();
 };

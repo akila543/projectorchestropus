@@ -3,6 +3,10 @@ const async = require('async');
 const config = require('./config');
 const getAmqpConnection = require('./getAmqpConnection');
 var amqp = require('amqplib/callback_api');
+var Jobs=require('./models/jobs');
+//var mongo=require('mongodb');
+var mongo=require('mongodb');
+var url = "mongodb://localhost:27017/workflowsandlanpacks";
 
 const app = express();
 var allowedOrigins = "http://localhost:* http://127.0.0.1:*";
@@ -44,13 +48,10 @@ app.post('/api/v1/jobs', (req, res) => {
         ch.bindQueue(q.queue, ex, '');
 
         ch.consume(q.queue, function(msg) {
-          console.log(" [x] Live from queue %s", msg.content.toString());
+          //console.log(" [x] Live from queue %s", msg.content.toString());
           var result=JSON.parse(msg.content.toString());
-        //  io.on('connection',function(){
-          //  console.log("established");
-            io.emit('result',result);
-          //});
-        }, {noAck: true});
+          delete1(result.jobId)
+          io.emit('result',result);
       });
     });
   });
@@ -75,6 +76,43 @@ app.post('/api/v1/jobs', (req, res) => {
     return;
   }
 });
+});
+var delete1 = function delete1(id){
+          mongo.connect(url, function(err, db) {
+           if (err) {
+               console.log('---- DB connection error <<=== ' + err + ' ===>>');
+           } else {
+               db.collection('jobs').deleteOne({
+                   jobId:id
+               }, function(err, result) {
+                   if (err) {
+                       console.log('---- DB deletion error <<=== ' + err + ' ===>>');
+                   } else {
+                      // console.log("+-+- Workflow delete status(+1-0) <<=== " + result.result.n + " ===>>");
+                      // res.send('Successfully deleted.');
+                      add(id);
+                      db.close();
+                   }
+               }); // end of delete
+           }
+       });
+}
+
+var add = function add(id){
+			 var item={
+									 jobId: id
+			 };
+			 mongo.connect(url,function(err,db)
+			 {
+					 db.collection('jobs').insertOne(item,function(err, result) {
+									 if (err) {
+											 console.log('---- DB add error <<=== ' + err + ' ===>>');
+									 } else {
+											 db.close();
+									 }
+							 })
+			});
+	 }
 
 const port = config.PORT || 4070;
 server.listen(port, () => {
